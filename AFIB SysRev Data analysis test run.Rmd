@@ -1,0 +1,46 @@
+---
+title: "AFIB test file"
+output: html_document
+date: "2023-06-27"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+load packages: metafor package is used for the analysis
+
+```{r, results=FALSE}
+
+library(dplyr)
+library(metafor)
+
+```
+
+```{r}
+#Load the dataset
+data <- read.csv("/Users/steph/Downloads/For analysis_FINAL.csv")
+#Add a column that calculates incidence based on number of cases and study sample size
+dat <- mutate(.data = data, 
+              incidence = n_AF/n_study_participants)
+#Create an object for meta-analysis model. measure = PFT, which is the Freeman-Tukey double arcsine transformed proportion (Freeman & Tukey, 1950).
+model <- escalc(measure = "PFT", xi = incidence, ni = n_study_participants, 
+                data = dat, slab = paste(Author, pubyear, sep =", ")) 
+#xi is frequency of AF, ni is sample size
+
+#Create a random effects model using DerSimonian-Laird estimator
+res <- rma(model, method = "DL")
+print(res)
+```
+
+Create a forest plot.
+
+```{r}
+forest(res, header = "Author(s) and Year", showweights=FALSE,
+       alim=c(-0.2,0.6), xlim = c(-0.8,0.8),ylim = c(-2,269),
+       cex=0.25, cex.lab=0.5, cex.axis = 0.5,
+       xlab = "Proportion", digits=4L,
+       top = 0)
+dev.print(pdf, file="Forestplotnew.pdf", onefile=T, paper='A4', width = 21/2.54, height = 29.7/2.54) 
+dev.off()
+```
